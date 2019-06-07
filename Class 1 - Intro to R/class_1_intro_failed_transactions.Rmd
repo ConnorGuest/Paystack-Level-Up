@@ -1,0 +1,288 @@
+---
+title: "Class 1 - Intro to R"
+author: "Connor Guest"
+date: "6/7/2019"
+output: 
+html_document:
+    theme: cosmo
+    highlight: monochrome
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    code_folding: hide
+    number_sections: true
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install packages, echo = TRUE, message = FALSE, warning = FALSE}
+# install.packages(c("stringr", "devtools", "dplyr", "tidyr", "ggplot2", "gganimate", "gifski", "png", "lubridate", "readr", "wesanderson"))
+```
+
+
+```{r load packages, message = FALSE, warning = FALSE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(lubridate)
+library(gganimate)
+library(devtools)
+library(stringr)
+library(tidyr)
+library(gifski)
+library(png)
+library(wesanderson)
+
+theme_set(
+  theme_minimal() +
+    theme(legend.position = "right")
+  )
+```
+
+
+## Importing Data 
+
+```{r import, }
+failed_trans <- read_csv("Branch Failed Transactions for April.csv")
+```
+
+```{r inspect,  echo = TRUE, results = 'hide'}
+# View dimensions of failed_trans
+dim(failed_trans)
+
+# Inspect first 6 rows of failed_trans
+head(failed_trans)
+
+# View column names of failed_trans
+names(failed_trans)
+
+# Look at structure of sales
+str(failed_trans)
+
+# View a summary of sales
+summary(failed_trans)
+
+# Get a glimpse of sales
+glimpse(failed_trans)
+```
+
+## Cleaning Data
+
+```{r,  echo = TRUE, results = 'hide'}
+# rename columns 
+failed_trans_1 <- rename(failed_trans, datetime = "Transaction Date", amount = "Transaction amount", error_category = errorcategory)
+
+# View column names of failed_trans
+names(failed_trans_1)
+```
+
+Transaction over time 
+```{r Failures over time,  echo = TRUE, results = 'hide'}
+# you can use substring or change the format
+
+failed_trans_1$date <- as.Date(failed_trans_1$datetime, "%Y/%m/%d")
+failed_trans_1$hour <- hour(failed_trans_1$datetime)
+failed_trans_1$weekday <- wday(failed_trans_1$datetime)
+
+str(failed_trans_1)
+
+```
+
+We now have an understanding of the structure of the dataset. Almost 200,000 rows and 14 variables.
+
+Let's start answering some basic questions.
+
+Question 1 - Are there any patterns in the number of transactions over the month? 
+
+```{r}
+failed_trans_by_day <- failed_trans_1 %>% 
+  group_by(date) %>% 
+  summarize(count = n())
+
+line_chart <- failed_trans_by_day %>%
+  ggplot(aes(x = date , y = count)) +
+  geom_line(color = "#3B9AB2") +
+  labs( x = "Date", y = "Number of Failed Transaction",
+        title ="Failed Transactions Over Time", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  expand_limits(y = 0)  +
+  theme_minimal()
+
+# line chart using gganimate
+line_chart + 
+  geom_point(aes(group = seq_along(date))) +
+  transition_reveal(date)
+
+# line_chart + geom_point()
+
+```
+
+
+Are there any patterns by hour of the day?
+
+
+
+```{r}
+failed_trans_by_hour <- failed_trans_1 %>%
+  group_by(hour) %>%
+  filter(hour != "7") %>%
+  summarize(count = n())
+
+bar_chart_by_hour <- failed_trans_by_hour %>%
+  ggplot(aes(x = hour , y = count)) +
+  geom_col(fill = "#3B9AB2") +
+  labs( x = "Hour of the Day", y = "Number of Failed Transaction",
+        title ="Failed Transactions Over A Day on Avg", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  expand_limits(y = 0)  +
+  theme_minimal()
+
+bar_chart_by_hour
+
+# bar chart using gganimate
+# bar_chart_by_hour + 
+#   transition_states(hour, wrap = FALSE) +
+#   shadow_mark() +
+#   enter_grow() +
+#   enter_fade()
+
+failed_trans_by_wday <- failed_trans_1 %>%
+  group_by(weekday) %>%
+  summarize(count = n())
+
+bar_chart_by_wday <- failed_trans_by_wday %>%
+  ggplot(aes(x = weekday, y = count)) +
+  geom_col(fill = "#3B9AB2") +
+  labs( x = "Day of the Week", y = "Number of Failed Transaction",
+        title ="Failed Transactions by Day of Week", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  expand_limits(y = 0)  +
+  theme_minimal()
+
+bar_chart_by_wday
+
+```
+
+
+
+```{r counting}
+bank_fail <- failed_trans_1 %>% 
+  group_by(bank) %>%
+  summarize(count = n()) %>%
+  filter(!is.na(bank)) %>%
+  arrange(desc(count)) %>% head(22)
+
+bank_fail %>%
+  ggplot(aes(x = reorder(bank, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Banks", y = "Number of Failed Transaction",
+        title ="Comparing Failed Transactions by Bank", 
+        subtitle = "the top 22 Banks out of 44", 
+        caption = "All data from month of April" )
+
+```
+
+Which individual had the most failed transactions? What can we learn from them?
+```{r}
+whos_failing <- failed_trans_1 %>%
+  group_by(email) %>%
+  mutate(fail_num = n()) %>%
+  arrange(desc(fail_num)) %>%
+  top_n(50)
+```
+
+
+```{r}
+error_category_fail <- failed_trans_1 %>% 
+  group_by(error_category) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+error_category_fail %>%
+  ggplot(aes(x = reorder(error_category, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Error Category", y = "Number of Failed Transactions",
+        title ="Comparing Failed Transactions by Error Category", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  theme_minimal()
+```
+```{r}
+bank_error_category_fail <- failed_trans_1 %>% 
+  filter(error_category == "bank") %>% 
+  group_by(gateway_response) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+bank_error_category_fail %>%
+  ggplot(aes(x = reorder(gateway_response, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Response", y = "Number of Failed Transactions",
+        title ="Comparing Failed Transactions by Gateway Response", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  theme_minimal()
+```
+
+```{r}
+individual_bank_error_category_fail <- failed_trans_1 %>% 
+  filter(error_category == "bank") %>%
+  filter(bank == c('Guaranty Trust Bank', 'Access Bank','Access Bank', 'First Bank of Nigeria', 'Zenith Bank', 'United Bank for Africa', 'Access Bank (Diamond)'))  %>%
+  group_by(bank, gateway_response) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+individual_bank_error_category_fail %>%
+  ggplot(aes(x = reorder(gateway_response, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Response", y = "Number of Failed Transactions",
+        title ="Comparing Failed Transactions by Gateway Response", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  theme_minimal() +
+  facet_wrap(~bank)
+```
+ 
+ 
+```{r}
+gateway_fail <- failed_trans_1 %>% 
+  group_by(gateway) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+gateway_fail %>%
+  ggplot(aes(x = reorder(gateway, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Banks", y = "Number of Failed Transaction",
+        title ="Comparing Failed Transactions by Gateway", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  theme_minimal()
+
+```
+
+We see that there are 0 failed 737 transactions. This means that they are being considered abandoned? 
+
+```{r}
+# Facetting
+bank_gateway_fail <- failed_trans_1 %>% 
+  filter(bank == c('Guaranty Trust Bank', 'Access Bank','Access Bank', 'First Bank of Nigeria', 'Zenith Bank', 'United Bank for Africa', 'Access Bank (Diamond)'))  %>%
+  group_by(bank, gateway) %>% 
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+bank_gateway_fail %>%
+  ggplot(aes(x = reorder(gateway, count) , y = count)) +
+  geom_col(fill = "#3B9AB2") + coord_flip() +
+  labs( x = "Banks", y = "Number of Failed Transaction",
+        title ="Comparing Failed Transactions by Gateway", 
+        subtitle = "", 
+        caption = "All data from month of April" ) +
+  theme_minimal() + facet_wrap(~bank)
+```

@@ -1,0 +1,208 @@
+---
+title: "Data Structure Fundamentals"
+author: "Connor Guest"
+date: "6/7/2019"
+output: 
+html_document:
+    theme: cosmo
+    highlight: monochrome
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    code_folding: hide
+    number_sections: true
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Data Fundamentals
+The following is an overview of some of the fundamentals we have not yet covered including: 
+Matrices
+Vectors
+Variables - Categorical and Continuous
+Factors, Levels - converting categorical variables to factors
+Data Frames
+Lists
+
+Go through and try to understnad what each line is doing. Do some research on your own to further lear nabout the different topics if something is not making sense :) 
+
+## Matrices
+In R, a matrix is a collection of elements of the same data type (numeric, character, or logical) arranged into a fixed number of rows and columns. Since you are only working with rows and columns, a matrix is called two-dimensional.
+
+```{r matrices}
+# Construct a matrix with 3 rows that contain the numbers 1 up to 9
+matrix(1:9, byrow = TRUE, nrow = 3)
+```
+
+```{r star wars}
+# Box office Star Wars (in millions!)
+new_hope <- c(460.998, 314.4)
+empire_strikes <- c(290.475, 247.900)
+return_jedi <- c(309.306, 165.8)
+
+# Construct matrix
+star_wars_matrix <- matrix(c(new_hope, empire_strikes, return_jedi), nrow = 3, byrow = TRUE)
+star_wars_matrix
+
+# Vectors region and titles, used for naming
+region <- c("US", "non-US")
+titles <- c("A New Hope", "The Empire Strikes Back", "Return of the Jedi")
+
+# Name the columns with region
+colnames(star_wars_matrix) <- region
+
+# Name the rows with titles
+rownames(star_wars_matrix) <- titles
+
+# Print out star_wars_matrix
+star_wars_matrix
+
+# Calculate worldwide box office figures
+worldwide_vector <- rowSums(star_wars_matrix)
+worldwide_vector
+
+# Bind the new variable worldwide_vector as a column to star_wars_matrix
+all_wars_matrix <- cbind(star_wars_matrix, worldwide_vector)
+all_wars_matrix
+```
+
+
+## Factors
+The term factor refers to a statistical data type used to store categorical variables. The difference between a categorical variable and a continuous variable is that a categorical variable can belong to a limited number of categories. A continuous variable, on the other hand, can correspond to an infinite number of values.
+
+It is important that R knows whether it is dealing with a continuous or a categorical variable, as the statistical models you will develop in the future treat both types differently.
+
+A good example of a categorical variable is sex. In many circumstances you can limit the sex categories to "Male", "Female", and "Gender Diverse". 
+
+What would be another type of categorical variable? Remember it is a variable with a limited number of categories. (ex. Bank, Region, Company, Error Response, Channel, Zipcode)
+
+What would be a quantitative variable? Remember it is a variable with an unlimited number of categories. (ex. transaction amount, GPA, file size)
+
+The different categories of a categorical variable are called "Levels" as you will see below.
+```{r}
+# Sex vector
+sex_vector <- c("Male", "Female", "Female", "Male", "Male")
+
+# Convert sex_vector to a factor
+factor_sex_vector <- factor(sex_vector)
+
+# Print out factor_sex_vector
+factor_sex_vector
+
+# Code to build factor_survey_vector
+survey_vector <- c("M", "F", "F", "M", "M")
+factor_survey_vector <- factor(survey_vector)
+
+factor_survey_vector
+
+# Specify the levels of factor_survey_vector
+levels(factor_survey_vector) <- c("Female", "Male")
+
+factor_survey_vector
+
+# Generate summary for survey_vector
+# Note that the class is still a character
+summary(survey_vector)
+
+# Generate summary for factor_survey_vector
+summary(factor_survey_vector)
+```
+
+```{r}
+# Create speed_vector
+speed_vector <- c("medium", "slow", "slow", "medium", "fast")
+speed_vector
+
+# Convert speed_vector to ordered factor vector
+factor_speed_vector <- factor(speed_vector, ordered = TRUE, levels = c("slow", "medium", "fast")) # you are specifying the order here
+
+# Print factor_speed_vector
+factor_speed_vector
+summary(factor_speed_vector)
+```
+
+## Data Frames
+In a data frame, variables are the columns and inputs are the rows. 
+
+Applying the str() function (try it below) will often be the first thing that you do when receiving a new data set or data frame. It is a great way to get more insight in your data set before diving into the real analysis.  
+
+For the mtcars dataframe, it tells you:  
+
+The total number of observations (e.g. 32 car types)  
+The total number of variables (e.g. 11 car features)  
+A full list of the variables names (e.g. mpg, cyl ... )  
+The data type of each variable (e.g. num)  
+The first observations of each variable
+
+mtcars is a dataframe that is available to everyone in R without importing it. You will see it come up frequently during your your data science learning journey.
+
+```{r}
+mtcars <- mtcars
+head(mtcars)
+tail(mtcars)
+# str() tells you the structure 
+str(mtcars)
+```
+
+Subsetting dataframes
+```{r planets}
+# Definition of vectors
+name <- c("Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune")
+type <- c("Terrestrial planet", "Terrestrial planet", "Terrestrial planet", 
+          "Terrestrial planet", "Gas giant", "Gas giant", "Gas giant", "Gas giant")
+diameter <- c(0.382, 0.949, 1, 0.532, 11.209, 9.449, 4.007, 3.883)
+rotation <- c(58.64, -243.02, 1, 1.03, 0.41, 0.43, -0.72, 0.67)
+rings <- c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE) 
+
+# Create a data frame from the vectors using data.frame()
+planets_df <- data.frame(name, type, diameter, rotation, rings)
+
+rings_vector <- planets_df$rings
+rings_vector
+
+# Select all columns from the planets that have rings (rings = TRUE)
+planets_df[rings_vector,]
+
+#Subset - same output as above, just a different method
+subset(planets_df, subset = rings)
+
+subset(planets_df, subset = diameter < 1)
+
+# Use order() to create positions
+positions <- order(planets_df$diameter) 
+positions
+
+# Use positions to sort planets_df
+planets_df[positions,]
+```
+
+## Lists
+A list in R allows you to gather a variety of objects under one name (that is, the name of the list) in an ordered way. These objects can be matrices, vectors, data frames, even other lists, etc. It is not even required that these objects are related to each other in any way.
+
+You could say that a list is some kind super data type: you can store practically any piece of information in it!
+
+Just like on your to-do list, you want to avoid not knowing or remembering what the components of your list stand for. That is why you should give names to them:
+```{r}
+# Vector with numerics from 1 up to 10
+my_vector <- 1:10 
+
+# Matrix with numerics from 1 up to 9
+my_matrix <- matrix(1:9, ncol = 3)
+
+# First 10 elements of the built-in data frame mtcars
+my_df <- mtcars[1:10,]
+
+# Construct list with these different elements:
+my_list <- list(my_vector, my_matrix, my_df)
+
+
+names(my_list) <- c("vec", "mat", "df")
+# you can add to lists by using the c() command
+
+my_list_full <- c(my_list, year = 1980)
+
+str(my_list_full)
+```
