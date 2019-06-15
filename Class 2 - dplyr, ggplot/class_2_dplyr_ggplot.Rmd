@@ -70,15 +70,19 @@ glimpse(gapminder)
 
 ```{r}
 #use the filter function and a pipe operator to get only data form the year 1957
-gapminder_1957 <- gapminder %>% filter(year == 1957)
+gapminder_1957_or_africa <- gapminder %>% filter(year == 1957 | continent == "Africa")
 
 
+gapminder_africa <- gapminder %>% filter(continent == c("Africa", "Asia", "America"))
 
 
 
 #Using arrange()
 # Sort in ascending order of lifeExp
-gapminder %>% arrange(lifeExp) %>% view()
+gapminder %>% arrange(lifeExp)
+
+
+arrange(gapminder, lifeExp)
   
 # Sort in descending order of lifeExp
 gapminder %>% arrange(desc(lifeExp))
@@ -90,7 +94,10 @@ gapminder %>% filter(year == 1957) %>% arrange(desc(pop))
 
 # Using the mutate() command
 # Use mutate to change lifeExp to be in months
-gapminder %>% mutate(lifeExp = lifeExp * 12)
+gap1 <- gapminder %>% mutate(lifeExp_month = lifeExp * 12)
+
+gap1 <- gap1 %>% select(-lifeExp_month)
+
 
 # Use mutate to create a new column called lifeExpMonths
 gapminder %>% mutate(lifeExpMonths = lifeExp * 12)
@@ -101,6 +108,20 @@ gapminder %>%
 filter(year == 2007) %>% 
 mutate(lifeExpMonths = lifeExp * 12) %>% 
 arrange(desc(lifeExpMonths))
+
+
+# Create a new dataframe from year 1952, create a new column for total gdp, and arrange so that the richest country is at the top
+GDP_1952 <- gapminder %>% 
+filter(year == 1952) %>% 
+mutate(total_gdp = gdpPercap * pop) %>% 
+arrange(desc(total_gdp))
+
+
+GDP_1952$total_gdp <- format(GDP_1952$total_gdp, scientific=F)
+
+format(xx, scientific=F)
+ 
+
 ```
 
 
@@ -112,6 +133,11 @@ gapminder_1952 <- gapminder %>% filter(year == 1952)
 
 gapminder_1952 %>% 
   ggplot(aes(x=lifeExp, y=gdpPercap)) + geom_point()
+
+
+
+gapminder_1952 %>% filter(gdpPercap > 90000)
+
 
 #population vs life expectancy
 gapminder_1952 %>% 
@@ -127,7 +153,7 @@ gapminder_1952 %>%
 
 # add color for continent and size for gdpPercap
 gapminder_1952 %>% 
-  ggplot(aes(x = pop, y = lifeExp, color = continent, size = gdpPercap)) +
+  ggplot(aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) +
   geom_point()+
   scale_x_log10()
 

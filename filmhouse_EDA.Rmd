@@ -1,0 +1,70 @@
+---
+title: "Filmhouse Analysis"
+author: "Connor Guest"
+date: "6/14/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+```
+
+
+
+```{r}
+getwd()
+
+filmhouse_trans <- read_csv("Class 3 - practice/Filmhouse transactions for May.csv")
+```
+
+```{r}
+glimpse(filmhouse_trans)
+```
+
+How many successful, failed, and abandoned transactions were there?
+```{r}
+counts <- filmhouse_trans %>% 
+          group_by(status) %>%
+          summarize(count = n()) %>%
+          arrange(desc(count))
+```
+
+What day did we have the most failed transactions?
+```{r}
+filmhouse_trans$date2 <- as.Date(filmhouse_trans$date, "%Y/%m/%d")
+filmhouse_trans$hour <- hour(filmhouse_trans$date)
+filmhouse_trans$weekday <- wday(filmhouse_trans$date)
+
+failed_trans <- filmhouse_trans %>%
+  filter(status == "failed") %>%
+  group_by(date2) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+failed_trans %>% 
+  ggplot(aes(x= date2, y=count)) + geom_col()
+
+failed_trans %>% 
+  ggplot(aes(x= date2, y=count)) + geom_line() 
+
+failed_trans %>% 
+  ggplot(aes(count)) + geom_bar()
+
+ 
+```
+
+```{r}
+df1 = data.frame(
+date_id = c('2017-08-01', '2017-08-02', '2017-08-03', '2017-08-04'),          
+nation = c('China', 'USA', 'China', 'USA'), 
+value = c(4.0, 5.0, 6.0, 5.5))
+
+ggplot(df1, aes(date_id, value, group=nation, colour=nation))+geom_line()+xlab(label='dates')+ylab(label='value')
+```
+

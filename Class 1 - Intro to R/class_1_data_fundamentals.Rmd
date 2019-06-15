@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 The following is an overview of some of the fundamentals we have not yet covered including: 
 Matrices
 Vectors
-Variables - Categorical and Continuous
+Variables -  Categorical and Continuous
 Factors, Levels - converting categorical variables to factors
 Data Frames
 Lists
